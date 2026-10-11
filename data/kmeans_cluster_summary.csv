@@ -1,0 +1,5 @@
+cluster,cluster_name,medicine_count,avg_quantity,avg_cost,avg_prescriptions
+0,"High-Cost, High-Activity",64,7724.671875,2964077.5,299.9375
+1,"Lower-Activity, High-Cost",58,6910.689655172414,2445419.4482758623,274.05172413793105
+2,"High-Volume, Lower-Cost",44,8142.022727272727,1263135.2727272727,314.6363636363636
+3,"Lower-Cost, Moderate-Activity",84,7305.964285714285,876757.9761904762,287.7857142857143

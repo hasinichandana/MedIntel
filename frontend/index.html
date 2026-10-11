@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MedIntel | Hospital Analytics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+
+
+
+
+
+</script>
+
+<style>
+
+:root {
+
+  --bg:#f4f7fb; --panel:#ffffff; --ink:#18243a;
+
+  --muted:#718096; --accent:#3768e5; --border:#e5eaf2;
+
+}
+
+* { box-sizing:border-box; }
+
+body {
+
+  margin:0; font-family:Inter,Arial,sans-serif;
+
+  background:var(--bg); color:var(--ink);
+
+}
+
+.layout { display:flex; min-height:100vh; }
+
+.sidebar {
+
+  width:235px; background:#17243d; color:#fff;
+
+  padding:28px 18px; flex-shrink:0;
+
+}
+
+.brand { font-size:24px; font-weight:800; letter-spacing:-1px; }
+
+.brand span { color:#77a5ff; }
+
+.tagline { font-size:12px; color:#aab8d1; margin:8px 0 35px; }
+
+.nav-title { color:#8fa1bf; font-size:11px; margin:22px 10px 10px; }
+
+.nav-item {
+
+  padding:12px; border-radius:9px; margin:5px 0;
+
+  color:#dbe5f6; font-size:14px;
+
+}
+
+.nav-item.active { background:#2c4268; color:#fff; }
+
+.main { flex:1; min-width:0; padding:30px; }
+
+.topbar {
+
+  display:flex; justify-content:space-between; align-items:center;
+
+  gap:16px; flex-wrap:wrap; margin-bottom:26px;
+
+}
+
+h1 { margin:0; font-size:27px; }
+
+.subtitle { color:var(--muted); margin-top:7px; font-size:13px; }
+
+.status {
+
+  background:#e4f8ed; color:#167346; padding:9px 13px;
+
+  border-radius:30px; font-size:12px; font-weight:700;
+
+}
+
+.grid { display:grid; gap:18px; }
+
+.metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
+.panel-grid { grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:20px; }
+
+.card {
+
+  background:var(--panel); border:1px solid var(--border);
+
+  border-radius:15px; padding:21px; min-width:0;
+
+  box-shadow:0 3px 14px #17243d08;
+
+}
+
+.metric-label { color:var(--muted); font-size:13px; }
+
+.metric-value { font-size:28px; font-weight:800; margin:13px 0 7px; }
+
+.metric-note { color:var(--muted); font-size:12px; }
+
+.card h2 { font-size:16px; margin:0 0 5px; }
+
+.card p { color:var(--muted); font-size:12px; margin:6px 0 18px; }
+
+.chart-wrap { height:285px; position:relative; }
+
+.search-row { display:flex; gap:10px; margin:15px 0; }
+
+input, select {
+
+  border:1px solid var(--border); background:#fff; padding:11px 12px;
+
+  border-radius:9px; font:inherit; min-width:0;
+
+}
+
+input { flex:1; }
+
+.table-wrap { overflow:auto; max-height:350px; }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+
+th,td { padding:12px 10px; border-bottom:1px solid var(--border); text-align:left; }
+
+th { color:var(--muted); font-weight:600; background:#fafbfd; }
+
+.pill { display:inline-block; background:#edf2ff; color:#3157b7; padding:5px 8px; border-radius:20px; font-size:11px; }
+
+.footer { color:var(--muted); font-size:12px; padding:22px 2px; }
+
+.error { color:#b42318; font-size:13px; margin-top:12px; }
+
+@media(max-width:1050px) {
+
+  .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+  .panel-grid { grid-template-columns:1fr; }
+
+}
+
+@media(max-width:650px) {
+
+  .sidebar { display:none; }
+
+  .main { padding:17px; }
+
+  h1 { font-size:23px; }
+
+  .metric-value { font-size:23px; }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="layout">
+
+<aside class="sidebar">
+
+  <div class="brand">Med<span>Intel</span></div>
+
+  <div class="tagline">HOSPITAL MEDICINE ANALYTICS</div>
+
+  <div class="nav-title">WORKSPACE</div>
+
+  <div class="nav-item active">▦ &nbsp; Overview</div>
+
+  <div class="nav-item">⌁ &nbsp; Consumption</div>
+
+  <div class="nav-item">◈ &nbsp; Medicine insights</div>
+
+  <div class="nav-item">◎ &nbsp; Clustering</div>
+
+  <div class="nav-item">↗ &nbsp; Model evaluation</div>
+
+  <div class="nav-title">PROJECT</div>
+
+  <div class="nav-item">▤ &nbsp; Data explorer</div>
+
+</aside>
+
+
+
+<main class="main">
+
+  <header class="topbar">
+
+    <div>
+
+      <h1>Hospital analytics overview</h1>
+
+      <div class="subtitle">Medicine consumption, cost patterns and analytical insights</div>
+
+    </div>
+
+    <div class="status" id="apiStatus">● Connecting to API</div>
+
+  </header>
+
+
+
+  <section class="grid metrics">
+
+    <div class="card">
+
+      <div class="metric-label">Medicines tracked</div>
+
+      <div class="metric-value" id="medicineCount">--</div>
+
+      <div class="metric-note">Unique medicines in catalogue</div>
+
+    </div>
+
+    <div class="card">
+
+      <div class="metric-label">Estimated quantity</div>
+
+      <div class="metric-value" id="quantityTotal">--</div>
+
+      <div class="metric-note">Recorded monthly quantities</div>
+
+    </div>
+
+    <div class="card">
+
+      <div class="metric-label">Months covered</div>
+
+      <div class="metric-value" id="monthCount">--</div>
+
+      <div class="metric-note">Historical reporting period</div>
+
+    </div>
+
+    <div class="card">
+
+      <div class="metric-label">Medicine segments</div>
+
+      <div class="metric-value" id="clusterCount">--</div>
+
+      <div class="metric-note">K-Means clusters</div>
+
+    </div>
+
+  </section>
+
+
+
+  <section class="grid panel-grid">
+
+    <div class="card">
+
+      <h2>Monthly medicine consumption</h2>
+
+      <p>Total estimated quantity across all medicines</p>
+
+      <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Medicine cluster distribution</h2>
+
+      <p>Number of medicines assigned to each segment</p>
+
+      <div class="chart-wrap"><canvas id="clusterChart"></canvas></div>
+
+    </div>
+
+  </section>
+
+
+
+  <section class="card" style="margin-top:20px">
+
+    <h2>Medicine explorer</h2>
+
+    <p>Search the medicine catalogue and review its category and cost.</p>
+
+    <div class="search-row">
+
+      <input id="medicineSearch" placeholder="Search by medicine, brand or category...">
+
+    </div>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead><tr>
+
+          <th>Medicine</th><th>Brand</th><th>Category</th><th>Unit cost</th>
+
+        </tr></thead>
+
+        <tbody id="medicineRows">
+
+          <tr><td colspan="4">Loading medicines...</td></tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+
+  <section class="card" style="margin-top:20px">
+
+    <h2>Medicine segmentation</h2>
+
+    <p>Cluster summaries based on quantity, cost and prescription activity.</p>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead><tr>
+
+          <th>Segment</th><th>Medicines</th><th>Average quantity</th>
+
+          <th>Average cost</th><th>Avg. prescriptions</th>
+
+        </tr></thead>
+
+        <tbody id="clusterRows">
+
+          <tr><td colspan="5">Loading cluster results...</td></tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+
+  <div class="footer">
+
+    MedIntel academic analytics prototype · Quantities are estimates, not live inventory.
+
+  </div>
+
+  <div id="errorMessage" class="error"></div>
+
+</main>
+
+</div>
+
+
+
+<script>
+
+const API = (window.location.protocol === "file:") ? "http://127.0.0.1:8000" : "";
+
+let medicines = [];
+
+let monthlyChart = null;
+
+let clusterChart = null;
+
+
+
+const number = value => Number(value || 0).toLocaleString("en-IN", {
+
+  maximumFractionDigits: 1
+
+});
+
+const money = value => "₹" + number(value);
+
+
+
+async function getJSON(path) {
+  try {
+    const response = await fetch(`${API}${path}`);
+
+    if (!response.ok) {
+      throw new Error(`${path} returned HTTP ${response.status} ${response.statusText}`.trim());
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to load ${path}:`, error);
+    throw error;
+  }
+}
+
+
+
+async function loadSummary() {
+
+  const s = await getJSON("/api/summary");
+
+  document.getElementById("medicineCount").textContent = number(s.total_medicines);
+
+  document.getElementById("quantityTotal").textContent = number(s.total_estimated_quantity);
+
+  document.getElementById("monthCount").textContent = number(s.months_covered);
+
+  document.getElementById("clusterCount").textContent = number(s.cluster_count);
+
+}
+
+
+
+async function loadMonthly() {
+
+  const rows = await getJSON("/api/monthly-consumption");
+
+  const labels = rows.map(r => r.month);
+
+  const values = rows.map(r => Number(r.quantity || 0));
+
+  if (monthlyChart) monthlyChart.destroy();
+
+
+
+  monthlyChart = new Chart(document.getElementById("monthlyChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Estimated quantity",
+        data: values,
+        borderColor: "#3768e5",
+        backgroundColor: "rgba(55,104,229,0.12)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#3768e5",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: "index"
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "top",
+          align: "start"
+        },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function(context) {
+              return " Estimated quantity: " +
+                Number(context.parsed.y).toLocaleString("en-IN");
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Month"
+          },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: true
+          },
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Estimated quantity"
+          },
+          ticks: {
+            callback: function(value) {
+              return Number(value).toLocaleString("en-IN");
+            }
+          }
+        }
+      }
+    }
+  });
+
+}
+
+
+
+async function loadClusters() {
+
+  const rows = await getJSON("/api/clusters");
+
+  document.getElementById("clusterRows").innerHTML = rows.map(r => `
+
+    <tr>
+
+      <td><span class="pill">${r.cluster_name}</span></td>
+
+      <td>${number(r.medicine_count)}</td>
+
+      <td>${number(r.avg_quantity)}</td>
+
+      <td>${money(r.avg_cost)}</td>
+
+      <td>${number(r.avg_prescriptions)}</td>
+
+    </tr>`).join("");
+
+
+
+  if (clusterChart) clusterChart.destroy();
+
+  clusterChart = new Chart(document.getElementById("clusterChart"), {
+
+    type: "doughnut",
+
+    data: {
+
+      labels: rows.map(r => r.cluster_name),
+
+      datasets: [{
+
+        data: rows.map(r => Number(r.medicine_count)),
+
+        backgroundColor: ["#3768e5","#28a58a","#f0a33b","#8b73df"],
+
+        borderWidth: 0
+
+      }]
+
+    },
+
+    options: {
+
+      responsive: true,
+
+      maintainAspectRatio: false,
+
+      plugins: { legend: { position: "bottom" } }
+
+    }
+
+  });
+
+}
+
+
+
+function renderMedicines(query = "") {
+
+  const q = query.toLowerCase();
+
+  const filtered = medicines.filter(m =>
+
+    [m.drug_name, m.brand_name, m.drug_category]
+
+      .some(v => String(v || "").toLowerCase().includes(q))
+
+  ).slice(0, 100);
+
+
+
+  document.getElementById("medicineRows").innerHTML = filtered.map(m => `
+
+    <tr>
+
+      <td>${escapeHTML(m.drug_name)}</td>
+
+      <td>${escapeHTML(m.brand_name)}</td>
+
+      <td>${escapeHTML(m.drug_category)}</td>
+
+      <td>${money(m.unit_cost)}</td>
+
+    </tr>`).join("") ||
+
+    '<tr><td colspan="4">No matching medicines found.</td></tr>';
+
+}
+
+
+
+function escapeHTML(value) {
+
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+
+  })[ch]);
+
+}
+
+
+
+async function loadMedicines() {
+
+  medicines = await getJSON("/api/medicines");
+
+  renderMedicines();
+
+  document.getElementById("medicineSearch").addEventListener("input", e => {
+
+    renderMedicines(e.target.value);
+
+  });
+
+}
+
+
+
+async function init() {
+
+  try {
+
+    await Promise.all([
+
+      loadSummary(), loadMonthly(), loadClusters(), loadMedicines()
+
+    ]);
+
+    document.getElementById("apiStatus").textContent = "● API connected";
+
+  } catch (error) {
+
+    document.getElementById("apiStatus").textContent = "● API error";
+
+    document.getElementById("apiStatus").style.background = "#fee4e2";
+
+    document.getElementById("apiStatus").style.color = "#b42318";
+
+    document.getElementById("errorMessage").textContent =
+
+      "Could not load dashboard data: " + error.message;
+
+  }
+
+}
+
+init();
+
+
+
+// MEDINTEL_NAV_PATCH_V1
+
+(() => {
+
+  const main = document.querySelector("main");
+
+  const navItems = [...document.querySelectorAll(".nav-item")];
+
+
+
+  if (!main || !navItems.length) {
+
+    console.error("MedIntel navigation: main or sidebar items not found.");
+
+    return;
+
+  }
+
+
+
+  const overviewHTML = main.innerHTML;
+
+  const menuNames = [
+
+    "Overview", "Consumption", "Medicine insights",
+
+    "Clustering", "Model evaluation", "Data explorer"
+
+  ];
+
+
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+
+    '"': "&quot;", "'": "&#39;"
+
+  })[ch]);
+
+
+
+  const fmt = value => Number(value || 0).toLocaleString("en-IN", {
+
+    maximumFractionDigits: 2
+
+  });
+
+
+
+  function table(rows) {
+
+    if (!Array.isArray(rows) || !rows.length) {
+
+      return "<p>No records available.</p>";
+
+    }
+
+
+
+    const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
+
+    return `<div style="overflow:auto"><table>
+
+      <thead><tr>${columns.map(c => `<th>${esc(c.replaceAll("_", " "))}</th>`).join("")}</tr></thead>
+
+      <tbody>${rows.map(row => `<tr>${columns.map(c =>
+
+        `<td>${esc(typeof row[c] === "object" && row[c] !== null
+
+          ? JSON.stringify(row[c]) : row[c])}</td>`
+
+      ).join("")}</tr>`).join("")}</tbody>
+
+    </table></div>`;
+
+  }
+
+
+
+  function heading(title, subtitle) {
+
+    return `<div style="margin-bottom:24px">
+
+      <h1>${esc(title)}</h1>
+
+      <div class="subtitle">${esc(subtitle)}</div>
+
+    </div>`;
+
+  }
+
+
+
+  function panel(title, content) {
+
+    return `<section class="card" style="margin-bottom:20px">
+
+      <h2>${esc(title)}</h2>${content}</section>`;
+
+  }
+
+
+
+  async function showSection(name) {
+
+    navItems.forEach(item => {
+
+      item.classList.toggle("active",
+
+        item.textContent.trim().toLowerCase().includes(name.toLowerCase()));
+
+    });
+
+
+
+    if (name === "Overview") {
+
+      main.innerHTML = overviewHTML;
+
+      await init();
+
+      return;
+
+    }
+
+
+
+    main.innerHTML = `<p>Loading ${esc(name)}...</p>`;
+
+
+
+    try {
+
+      let content = "";
+
+
+
+      if (name === "Consumption") {
+
+        const rows = await getJSON("/api/monthly-consumption");
+
+        content = heading("Medicine consumption", "Monthly estimated quantities across the reporting period")
+
+          + panel("Monthly consumption records", table(rows));
+
+      }
+
+
+
+      else if (name === "Medicine insights") {
+
+        const rows = await getJSON("/api/medicines");
+
+        content = heading("Medicine insights", "Search the medicine catalogue and review costs and categories")
+
+          + `<section class="card">
+
+            <input id="insightSearch" placeholder="Search medicine, brand or category..."
+
+              style="width:100%;padding:12px;margin-bottom:16px;border:1px solid #d8dfeb;border-radius:8px">
+
+            <div id="insightTable"></div></section>`;
+
+
+
+        main.innerHTML = content;
+
+        const search = document.getElementById("insightSearch");
+
+        const output = document.getElementById("insightTable");
+
+
+
+        function render() {
+
+          const q = search.value.toLowerCase();
+
+          const filtered = rows.filter(r =>
+
+            [r.drug_name, r.brand_name, r.drug_category]
+
+              .some(v => String(v ?? "").toLowerCase().includes(q))
+
+          );
+
+          output.innerHTML = `<p>${filtered.length} medicines found</p>`
+
+            + table(filtered.slice(0, 250));
+
+        }
+
+
+
+        search.addEventListener("input", render);
+
+        render();
+
+        return;
+
+      }
+
+
+
+      else if (name === "Clustering") {
+
+        const [summary, assignments] = await Promise.all([
+
+          getJSON("/api/clusters"),
+
+          getJSON("/api/cluster-medicines")
+
+        ]);
+
+
+
+        content = heading("Medicine clustering", "K-Means segmentation of medicines by usage, cost and prescription activity")
+
+          + panel("Cluster summary", table(summary))
+
+          + panel("Medicine cluster assignments", table(assignments));
+
+      }
+
+
+
+      else if (name === "Model evaluation") {
+
+        const [forecast, demand] = await Promise.all([
+
+          getJSON("/api/forecast-evaluation"),
+
+          getJSON("/api/high-demand")
+
+        ]);
+
+
+
+        content = heading("Model evaluation", "Experimental forecasting and high-demand classification results")
+
+          + panel("Forecast evaluation data",
+
+            `<p>Rows returned: ${fmt(forecast.rows)}. Review the sample and available fields below.</p>`
+
+            + table(forecast.sample || []))
+
+          + panel("High-demand classification data",
+
+            `<p>Rows returned: ${fmt(demand.rows)}. These are model-analysis records, not confirmed stockout alerts.</p>`
+
+            + table(demand.sample || []))
+
+          + `<p class="subtitle">Use the notebook's holdout metrics to assess model quality. Predictions should not be treated as validated reorder instructions.</p>`;
+
+      }
+
+
+
+      else if (name === "Data explorer") {
+
+        content = heading("Data explorer", "Inspect the processed datasets exposed by the API")
+
+          + `<section class="card">
+
+            <label for="datasetSelect">Choose a dataset</label>
+
+            <select id="datasetSelect" style="display:block;width:100%;padding:12px;margin:12px 0 20px;border:1px solid #d8dfeb;border-radius:8px">
+
+              <option value="/api/medicines">Medicine master</option>
+
+              <option value="/api/monthly-consumption">Monthly consumption</option>
+
+              <option value="/api/cluster-medicines">K-Means assignments</option>
+
+              <option value="/api/clusters">Cluster summary</option>
+
+              <option value="/api/forecast-evaluation">Forecast evaluation sample</option>
+
+              <option value="/api/high-demand">High-demand sample</option>
+
+            </select>
+
+            <div id="datasetOutput">Choose a dataset to load.</div>
+
+          </section>`;
+
+
+
+        main.innerHTML = content;
+
+        const select = document.getElementById("datasetSelect");
+
+        const output = document.getElementById("datasetOutput");
+
+
+
+        async function loadDataset() {
+
+          output.innerHTML = "<p>Loading dataset...</p>";
+
+          try {
+
+            const data = await getJSON(select.value);
+
+            const rows = Array.isArray(data) ? data : (data.sample || []);
+
+            output.innerHTML = `<p>${rows.length} rows displayed`
+
+              + (data.rows !== undefined ? ` of ${fmt(data.rows)} returned records` : "")
+
+              + `</p>` + table(rows);
+
+          } catch (error) {
+
+            output.textContent = "Could not load dataset: " + error.message;
+
+          }
+
+        }
+
+
+
+        select.addEventListener("change", loadDataset);
+
+        await loadDataset();
+
+        return;
+
+      }
+
+
+
+      main.innerHTML = content;
+
+    } catch (error) {
+
+      main.innerHTML = heading(name, "Unable to load this section")
+
+        + panel("Error", `<p>${esc(error.message)}</p>
+
+          <p>Please check the API endpoint and try again.</p>`);
+
+      console.error("MedIntel section error:", error);
+
+    }
+
+  }
+
+
+
+  navItems.forEach(item => {
+
+    const label = item.textContent.trim();
+
+    const name = menuNames.find(n => label.toLowerCase().includes(n.toLowerCase()));
+
+    if (!name) return;
+
+
+
+    item.style.cursor = "pointer";
+
+    item.setAttribute("role", "button");
+
+    item.setAttribute("tabindex", "0");
+
+    item.addEventListener("click", () => showSection(name));
+
+    item.addEventListener("keydown", event => {
+
+      if (event.key === "Enter" || event.key === " ") {
+
+        event.preventDefault();
+
+        showSection(name);
+
+      }
+
+    });
+
+  });
+
+})();
+
+</script>
+
+</body>
+
+</html>
