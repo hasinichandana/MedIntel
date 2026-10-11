@@ -131,11 +131,10 @@ The results are experimental and should not be interpreted as confirmed stockout
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/MedIntel.git
+git clone https://github.com/hasinichandana/MedIntel.git
 cd MedIntel
 ```
 
-Replace `YOUR-USERNAME` with your GitHub username.
 
 ### 2. Create a virtual environment
 
